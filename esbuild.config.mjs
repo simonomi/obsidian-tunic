@@ -10,8 +10,8 @@ if you want to view the source, please visit the github repository of this plugi
 */
 `;
 
-const sourceDirectory = "/Users/simonomi/google drive​/github/obsidian-markdown-pitch-accent/"
-const destinationDirectory = "/Users/simonomi/Library/Mobile Documents/iCloud~md~obsidian/Documents/main/.obsidian/plugins/obsidian-markdown-pitch-accent/"
+const sourceDirectory = "/Users/simonomi/Documents/programming/typescript/obsidian-tunic/"
+const destinationDirectory = "/Users/simonomi/Library/Mobile Documents/iCloud~md~obsidian/Documents/main/.obsidian/plugins/obsidian-tunic/"
 const filesToCopy = [
 	"main.js",
 	"manifest.json",

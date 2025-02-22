@@ -1,84 +1,96 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting} from 'obsidian';
+import { Plugin } from 'obsidian';
 
-const pitchAccentRegex = /([^\r\n\t\f\v :\/]*){([HLl]+)}/gm
-const tags = "p, h1, h2, h3, h4, h5, h6, ol, ul, table"
+const svgNamespaceURI = "http://www.w3.org/2000/svg"
 
-const convertFurigana = (element:Text): Node => {
-	const matches = Array.from(element.textContent.matchAll(pitchAccentRegex))
-	let lastNode = element
-	for (const match of matches) {
-		pitchPattern = match[2]
-		text = match[1].substring(match[1].length - pitchPattern.length)
-		
-		const newNode = document.createElement("span")
-		newNode.appendText(match[1].substring(0, match[1].length - pitchPattern.length))
-		
-		if (pitchPattern.length != text.length && pitchPattern.length !== text.length + 1) {
-			newNode.appendText(text)
-			const nodeToReplace = lastNode.splitText(lastNode.textContent.indexOf(match[0]))
-			lastNode = nodeToReplace.splitText(match[0].length)
-			nodeToReplace.replaceWith(newNode)
-			continue
-		}
-		
-		let index = 0
-		let nextChar
-		for (const character of text.split("")) {
-			nextChar = newNode.createEl("span", {text: character})
-			
-			nextChar.addClass(pitchPattern[index] == "L" ? "pitch-accent-low" : "pitch-accent-high")
-			
-			if (index > 0 && pitchPattern[index] != pitchPattern[index - 1]) {
-				nextChar.addClass("pitch-accent-change")
-			}
-			
-			index++
-		}
-		
-		if (nextChar != undefined) {
-			if (pitchPattern[index] == "L") {
-				nextChar.addClass("pitch-accent-drop")
-			} else if (pitchPattern[index] == "H") {
-				nextChar.addClass("pitch-accent-drop")
-			}
-		}
-		
-		const nodeToReplace = lastNode.splitText(lastNode.textContent.indexOf(match[0]))
-		lastNode = nodeToReplace.splitText(match[0].length)
-		nodeToReplace.replaceWith(newNode)
-	}
-	return element
+const tunicWritingRegex = /^(\|?)([/\\<]?)([.|]?)([/\\>]?)-(\|?)([/\\<]?)(\|?)([/\\>]?)(\.?)$/;
+
+function makeLine(parent: Element, x1: number, y1: number, x2: number, y2: number) {
+	const line = document.createElementNS(svgNamespaceURI, "line");
+	line.setAttribute("x1", x1.toString());
+	line.setAttribute("y1", y1.toString());
+	line.setAttribute("x2", x2.toString());
+	line.setAttribute("y2", y2.toString());
+	parent.appendChild(line);
 }
 
-export default class MyPlugin extends Plugin {
-	public postprocessor: MarkdownPostProcessor = (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
-		const blockToReplace = el.querySelectorAll(tags)
-		if (blockToReplace.length == 0) return
-	
-		function replace (node:Node) {
-			const childrenToReplace: Text[] = []
-			node.childNodes.forEach(child => {
-				if (child.nodeType == 3) {
-					// nodes of type 3 are TextElements
-					childrenToReplace.push(child as Text)
-				} else if (child.hasChildNodes() && child.nodeName != "CODE" && child.nodeName != "RUBY") {
-					// ignore content in Code Blocks
-					replace(child)
-				}
-			})
-			
-			childrenToReplace.forEach((child) => {
-				child.replaceWith(convertFurigana(child))
-			})
-		}
-		
-		blockToReplace.forEach(block => {
-			replace(block)
-		})
-	}
-	
+export default class TunicPlugin extends Plugin {
 	async onload () {
-		this.registerMarkdownPostProcessor(this.postprocessor)
+		this.registerMarkdownPostProcessor((element, context) => {
+			const codeBlocks = element.findAll("code");
+			
+			for (const codeBlock of codeBlocks) {
+				const writingMatch = codeBlock.textContent.match(tunicWritingRegex);
+				
+				if (writingMatch) {
+					const character = document.createElementNS(svgNamespaceURI, "svg");
+					character.setAttribute("width", "1em");
+					character.setAttribute("viewBox", "-10 -10 120 230");
+					
+					const group = document.createElementNS(character.namespaceURI, "g");
+					group.setAttribute("stroke", "var(--text-normal)");
+					group.setAttribute("stroke-width", "10");
+					character.appendChild(group);
+					
+					makeLine(group, 0, 100, 100, 100);
+					
+					if (writingMatch[1] == "|") {
+						makeLine(group, 0, 33, 0, 100);
+					}
+					
+					if (writingMatch[2] == "/" || writingMatch[2] == "<") {
+						makeLine(group, 0, 33, 50, 0);
+					}
+					if (writingMatch[2] == "\\" || writingMatch[2] == "<") {
+						makeLine(group, 0, 33, 50, 66);
+					}
+					
+					if (writingMatch[3] == ".") {
+						makeLine(group, 50, 66, 50, 100);
+					} else if (writingMatch[3] == "|") {
+						makeLine(group, 50, 0, 50, 100);
+					}
+					
+					if (writingMatch[4] == "/" || writingMatch[4] == ">") {
+						makeLine(group, 50, 66, 100, 33);
+					}
+					if (writingMatch[4] == "\\" || writingMatch[4] == ">") {
+						makeLine(group, 50, 0, 100, 33);
+					}
+					
+					if (writingMatch[5] == "|") {
+						makeLine(group, 0, 133, 0, 166);
+					}
+					
+					if (writingMatch[6] == "/" || writingMatch[6] == "<") {
+						makeLine(group, 0, 166, 50, 133);
+					}
+					if (writingMatch[6] == "\\" || writingMatch[6] == "<") {
+						makeLine(group, 0, 166, 50, 200);
+					}
+					
+					if (writingMatch[7] == "|") {
+						makeLine(group, 50, 133, 50, 200);
+					}
+					
+					if (writingMatch[8] == "/" || writingMatch[8] == ">") {
+						makeLine(group, 50, 133, 100, 166);
+					}
+					if (writingMatch[8] == "\\" || writingMatch[8] == ">") {
+						makeLine(group, 50, 200, 100, 166);
+					}
+					
+					if (writingMatch[9] == ".") {
+						const circle = document.createElementNS(svgNamespaceURI, "circle");
+						circle.setAttribute("cx", "50");
+						circle.setAttribute("cy", "200");
+						circle.setAttribute("r", "10");
+						group.appendChild(circle);
+					}
+					
+					codeBlock.replaceWith(character);
+				}
+			}
+		})
 	}
 	
 	onunload () {}
