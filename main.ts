@@ -4,8 +4,8 @@ import { ViewPlugin, WidgetType, EditorView, ViewUpdate, Decoration, DecorationS
 
 const svgNamespaceURI = "http://www.w3.org/2000/svg"
 
-const tunicWritingRegex = /^(\|?)([/\\<]?)([.|]?)([/\\>]?)-([| ]?)([/\\<]?)(\|?)([/\\>]?)(\.?)$/;
-const globalTunicWritingRegex = /`((\|?[/\\<]?[.|]?[/\\>]?-[| ]?[/\\<]?\|?[/\\>]?\.?\+?)+)`/g;
+const tunicWritingRegex = /^([| ]?)([/\\< ]?)([,|]?)([/\\>]?)-([| ]?)([/\\< ]?)(\|?)([/\\>]?)(\.?)$/;
+const globalTunicWritingRegex = /`(([| ]?[/\\< ]?[,|]?[/\\>]?-[| ]?[/\\< ]?\|?[/\\>]?\.?\+?)+)`/g;
 
 function makeLine(parent: Element, x1: number, y1: number, x2: number, y2: number) {
 	const line = document.createElementNS(svgNamespaceURI, "line");
@@ -29,7 +29,7 @@ function tunicWriting(text: string): HTMLElement {
 		
 		const character = document.createElementNS(svgNamespaceURI, "svg");
 		character.setAttribute("width", "1em");
-		character.setAttribute("viewBox", "-5 -5 110 220");
+		character.setAttribute("viewBox", "-5 -5 110 230");
 		
 		const group = document.createElementNS(character.namespaceURI, "g");
 		group.setAttribute("stroke", "var(--text-normal)");
@@ -49,7 +49,7 @@ function tunicWriting(text: string): HTMLElement {
 			makeLine(group, -5, 33, 50, 66);
 		}
 		
-		if (writingMatch[3] == ".") {
+		if (writingMatch[3] == ",") {
 			makeLine(group, 50, 66, 50, 100);
 		} else if (writingMatch[3] == "|") {
 			makeLine(group, 50, 0, 50, 100);
@@ -109,7 +109,7 @@ export default class TunicPlugin extends Plugin {
 				const characters = tunicWriting(codeBlock.textContent);
 				
 				if (characters) {
-					codeBlock.replaceWith();
+					codeBlock.replaceWith(characters);
 				}
 			}
 		})
