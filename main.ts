@@ -2,7 +2,7 @@ import { Plugin } from 'obsidian';
 
 const svgNamespaceURI = "http://www.w3.org/2000/svg"
 
-const tunicWritingRegex = /^(\|?)([/\\<]?)([.|]?)([/\\>]?)-(\|?)([/\\<]?)(\|?)([/\\>]?)(\.?)$/;
+const tunicWritingRegex = /^(\|?)([/\\<]?)([.|]?)([/\\>]?)-([| ]?)([/\\<]?)(\|?)([/\\>]?)(\.?)$/;
 
 function makeLine(parent: Element, x1: number, y1: number, x2: number, y2: number) {
 	const line = document.createElementNS(svgNamespaceURI, "line");
@@ -18,30 +18,38 @@ export default class TunicPlugin extends Plugin {
 		this.registerMarkdownPostProcessor((element, context) => {
 			const codeBlocks = element.findAll("code");
 			
+		codeBlockLoop:
 			for (const codeBlock of codeBlocks) {
-				const writingMatch = codeBlock.textContent.match(tunicWritingRegex);
+				const words = codeBlock.textContent.split("+");
 				
-				if (writingMatch) {
+				const characters = document.createElement("span");
+				characters.addClass("tunic");
+				
+				for (const word of words) {
+					const writingMatch = word.match(tunicWritingRegex);
+					
+					if (!writingMatch) { break codeBlockLoop; }
+					
 					const character = document.createElementNS(svgNamespaceURI, "svg");
 					character.setAttribute("width", "1em");
-					character.setAttribute("viewBox", "-10 -10 120 230");
+					character.setAttribute("viewBox", "-5 -5 110 220");
 					
 					const group = document.createElementNS(character.namespaceURI, "g");
 					group.setAttribute("stroke", "var(--text-normal)");
 					group.setAttribute("stroke-width", "10");
 					character.appendChild(group);
 					
-					makeLine(group, 0, 100, 100, 100);
+					makeLine(group, -5, 100, 105, 100);
 					
 					if (writingMatch[1] == "|") {
 						makeLine(group, 0, 33, 0, 100);
 					}
 					
 					if (writingMatch[2] == "/" || writingMatch[2] == "<") {
-						makeLine(group, 0, 33, 50, 0);
+						makeLine(group, -5, 33, 50, 0);
 					}
 					if (writingMatch[2] == "\\" || writingMatch[2] == "<") {
-						makeLine(group, 0, 33, 50, 66);
+						makeLine(group, -5, 33, 50, 66);
 					}
 					
 					if (writingMatch[3] == ".") {
@@ -51,10 +59,10 @@ export default class TunicPlugin extends Plugin {
 					}
 					
 					if (writingMatch[4] == "/" || writingMatch[4] == ">") {
-						makeLine(group, 50, 66, 100, 33);
+						makeLine(group, 50, 66, 105, 33);
 					}
 					if (writingMatch[4] == "\\" || writingMatch[4] == ">") {
-						makeLine(group, 50, 0, 100, 33);
+						makeLine(group, 50, 0, 105, 33);
 					}
 					
 					if (writingMatch[5] == "|") {
@@ -62,10 +70,10 @@ export default class TunicPlugin extends Plugin {
 					}
 					
 					if (writingMatch[6] == "/" || writingMatch[6] == "<") {
-						makeLine(group, 0, 166, 50, 133);
+						makeLine(group, -5, 166, 50, 133);
 					}
 					if (writingMatch[6] == "\\" || writingMatch[6] == "<") {
-						makeLine(group, 0, 166, 50, 200);
+						makeLine(group, -5, 166, 50, 200);
 					}
 					
 					if (writingMatch[7] == "|") {
@@ -73,10 +81,10 @@ export default class TunicPlugin extends Plugin {
 					}
 					
 					if (writingMatch[8] == "/" || writingMatch[8] == ">") {
-						makeLine(group, 50, 133, 100, 166);
+						makeLine(group, 50, 200, 105, 166);
 					}
 					if (writingMatch[8] == "\\" || writingMatch[8] == ">") {
-						makeLine(group, 50, 200, 100, 166);
+						makeLine(group, 50, 133, 105, 166);
 					}
 					
 					if (writingMatch[9] == ".") {
@@ -87,8 +95,10 @@ export default class TunicPlugin extends Plugin {
 						group.appendChild(circle);
 					}
 					
-					codeBlock.replaceWith(character);
+					characters.appendChild(character);
 				}
+				
+				codeBlock.replaceWith(characters);
 			}
 		})
 	}
