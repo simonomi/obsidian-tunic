@@ -119,12 +119,22 @@ export default class TunicPlugin extends Plugin {
 }
 
 class TunicWidget extends WidgetType {
-	constructor(readonly codeBlock: string) {
+	constructor(
+		readonly codeBlock: string,
+		readonly from: number,
+		readonly to: number
+	) {
 		super()
 	}
 	
-	toDOM(_: EditorView): HTMLElement {
-		return tunicWriting(this.codeBlock);
+	toDOM(view: EditorView): HTMLElement {
+		const writing = tunicWriting(this.codeBlock);
+		
+		writing.addEventListener("click", (_) => {
+			view.dispatch({ selection: { anchor: this.from, head: this.to } })
+		})
+		
+		return writing;
 	}
 }
 
@@ -175,7 +185,7 @@ const viewPlugin = ViewPlugin.fromClass(class {
 				})
 				
 				if (add) {
-					builder.add(from, to, Decoration.widget({ widget: new TunicWidget(match[1]) }))
+					builder.add(from, to, Decoration.widget({ widget: new TunicWidget(match[1], from, to) }))
 				}
 			}
 		}
